@@ -32,6 +32,7 @@ func AuthRequired() fiber.Handler {
 		}
 
 		c.Locals("userID", userID)
+		c.Locals("token", tokenParts[1])
 		return c.Next()
 	}
 }

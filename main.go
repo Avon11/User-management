@@ -49,6 +49,10 @@ func main() {
 	tasks.Put("/:id", handlers.UpdateTask)
 	tasks.Delete("/:id", handlers.DeleteTask)
 
+	// get token
+	token := api.Group("/token", middleware.AuthRequired())
+	token.Get("/", handlers.RefreshToken) // This is the API to get access toekn if it is expired. client need to send refresh token in this api to get new access token
+
 	port := os.Getenv("PORT")
 	if port == "" {
 		port = "8080"

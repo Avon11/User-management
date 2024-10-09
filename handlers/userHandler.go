@@ -68,18 +68,34 @@ func SignIn(c *fiber.Ctx) error {
 		})
 	}
 
-	token, err := utils.GenerateToken(user.ID.Hex())
+	accessToken, err := utils.GenerateAccessToken(user.ID.Hex())
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": "Failed to generate token",
 		})
 	}
 
+	refreshToken, err := utils.GenerateAccessToken(user.ID.Hex())
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": "Failed to generate token",
+		})
+	}
+	user.RefreshToken = refreshToken
+	if _, err := database.GetDB().Collection("user").UpdateByID(c.Context(), user.ID, bson.M{"$set": bson.M{"refreshToken": refreshToken}}); err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"message": "Could not update refresh token"})
+	}
+
 	return c.JSON(fiber.Map{
-		"token": token,
+		"token": accessToken,
 	})
 }
 
 func SignOut(c *fiber.Ctx) error {
+	userID := c.Locals("userID").(string)
+	_, err := database.GetDB().Collection("user").UpdateByID(c.Context(), userID, bson.M{"$set": bson.M{"refreshToken": ""}})
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"message": "Could not sign out"})
+	}
 	return c.SendStatus(fiber.StatusOK)
 }

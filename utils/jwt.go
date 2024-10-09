@@ -9,13 +9,21 @@ import (
 	"github.com/dgrijalva/jwt-go"
 )
 
-func GenerateToken(userID string) (string, error) {
+func GenerateAccessToken(userID string) (string, error) {
 	claims := jwt.MapClaims{
 		"user_id": userID,
 		"exp":     time.Now().Add(time.Hour * 1).Unix(),
 	}
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 	return token.SignedString([]byte(config.GetJWTSecret()))
+}
+
+func GenerateRefreshToken(userID string, secret string) (string, error) {
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
+		"userID": userID,
+		"exp":    time.Now().Add(time.Hour * 24 * 7).Unix(),
+	})
+	return token.SignedString([]byte(secret))
 }
 
 func ValidateToken(tokenString string) (string, error) {
